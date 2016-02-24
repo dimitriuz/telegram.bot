@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Telegram.Bot.Types;
+using System.Net;
 
 namespace Telegram.Bot
 {
