@@ -35,7 +35,55 @@ namespace Telegram.Bot
         /// The current message offset
         /// </summary>
         public int MessageOffset { get; set; } = 0;
+        
+        private Dictionary<string, string> proxy_params;
+        
+        public void SetProxy(Dictionary<string, string> pr_params)
+        {
+            proxy_params = pr_params;
+        }
+		
+		private HttpClientHandler getProxy()
+        {
+            //proxy
+            string proxy_address = proxy_params["address"];
+            string proxy_port = proxy_params["port"];
+            string proxy_user = proxy_params["user"];
+            string proxy_pass = proxy_params["password"];
+            string proxyUri =
+            string.Format("{0}:{1}", proxy_address, proxy_port);
+            //Console.WriteLine("Proxy "+proxyUri);
+            NetworkCredential proxyCreds = new NetworkCredential(
+                proxy_user,
+                proxy_pass
+            );
 
+            WebProxy proxy = new WebProxy(proxyUri, false)
+            {
+                UseDefaultCredentials = false,
+                Credentials = proxyCreds,
+            };
+
+            // Now create a client handler which uses that proxy
+
+            //HttpClient client = null;
+            HttpClientHandler httpClientHandler = new HttpClientHandler()
+            {
+                Proxy = proxy,
+                PreAuthenticate = true,
+                UseDefaultCredentials = false,
+            };
+
+            // You only need this part if the server wants a username and password:
+
+            string
+                httpUserName = proxy_user,
+                httpPassword = proxy_pass;
+
+            httpClientHandler.Credentials = new NetworkCredential(httpUserName, httpPassword);
+            return httpClientHandler;
+            //
+        }
         protected virtual void OnUpdateReceived(UpdateEventArgs e)
         {
             UpdateReceived?.Invoke(this, e);
@@ -838,7 +886,12 @@ namespace Telegram.Bot
         {
             var uri = new Uri(BaseUrl + _token + "/" + method);
 
-            using (var client = new HttpClient())
+            HttpClientHandler httpClientHandler;
+            if (proxy_params!= null)  
+                httpClientHandler = getProxy();
+            else 
+                 httpClientHandler = new HttpClientHandler();
+            using (var client = new HttpClient(httpClientHandler))
             {
                 ApiResponse<T> responseObject = null;
                 try
